@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-swap}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-swap}
+      POSTGRES_DB: ${POSTGRES_DB:-swap}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-swap}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1"]
+    volumes:
+      - redisdata:/data
+
+  api:
+    build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://swap:swap@postgres:5432/swap?schema=public
+      - REDIS_URL=redis://redis:6379
+      - PORT=8080
+      - NODE_ENV=development
+      - CORS_ORIGIN=*
+      - FEE_MODE=percent_of_ton
+      - FEE_BPS_DEFAULT=200
+      - FEE_MIN_BPS=0
+      - FEE_MAX_BPS=500
+      - FLAT_FEE_TON_DEFAULT=0.2
+      - FLAT_FEE_TON_EXTRA_FOR_48H=0.0
+      - ALLOW_MAKER_EDIT_FEE=true
+      - DEADLINE_DEFAULT_HOURS=24
+      - DEADLINE_MAX_HOURS=48
+      - DEADLINE_48H_EXTRA_BPS=10
+      - FEE_ENABLED=true
+      - FEE_RECEIVER=UQASO3yGFsnnEZIyPioH9gr3I9BqjT4L4Nx_Ye_f8ThkcL6d
+      - TON_NETWORK=testnet
+      - RPC_PRIMARY=tonapi
+      - RPC_SECONDARY=nownodes
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8080:8080"
+
+  web:
+    build: ./frontend
+    environment:
+      - VITE_API_URL=http://localhost:8080/api
+    depends_on:
+      - api
+    ports:
+      - "8081:80"
+
+volumes:
+  pgdata:
+  redisdata:

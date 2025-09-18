@@ -1,0 +1,75 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Offer {
+  id                  BigInt   @id @default(autoincrement())
+  parentId            BigInt?  
+  maker               String
+  takerAllowed        String?
+  offeredKind         String
+  offeredContract     String?
+  offeredTokenId      BigInt?
+  offeredAmountTon    Decimal? @db.Decimal(30, 9)
+  wantedKind          String
+  wantedContract      String?
+  wantedTokenId       BigInt?
+  wantedAmountTon     Decimal? @db.Decimal(30, 9)
+  feeBps              Int
+  deadline            DateTime
+  status              String   @default("Active")
+  makerDeposited      Boolean  @default(false)
+  takerDeposited      Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  CounterOffers       CounterOffer[]
+}
+
+model CounterOffer {
+  id            BigInt  @id @default(autoincrement())
+  parentOfferId BigInt
+  maker         String
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  Offer Offer @relation(fields: [parentOfferId], references: [id], onDelete: Cascade)
+}
+
+model TransactionLog {
+  id        BigInt  @id @default(autoincrement())
+  offerId   BigInt?
+  txHash    String  @unique
+  kind      String
+  status    String
+  payload   Json
+  createdAt DateTime @default(now())
+}
+
+model Collection {
+  contract   String @id
+  slug       String?
+  name       String?
+  image      String?
+  floorPrice Decimal? @db.Decimal(30,9)
+  verified   Boolean @default(false)
+  updatedAt  DateTime @updatedAt
+}
+
+model NFT {
+  id        BigInt  @id @default(autoincrement())
+  contract  String
+  tokenId   BigInt
+  owner     String?
+  metadata  Json?
+  updatedAt DateTime @updatedAt
+
+  @@unique([contract, tokenId])
+}
