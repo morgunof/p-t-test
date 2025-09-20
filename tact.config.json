@@ -1,0 +1,9 @@
+{
+  "projects": [
+    {
+      "name": "swap",
+      "path": "./contracts/AtomicSwap.tact",
+      "output": "./build"
+    }
+  ]
+}

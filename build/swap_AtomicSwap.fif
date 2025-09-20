@@ -1,0 +1,55 @@
+// automatically generated from `@stdlib/std/stdlib.fc` `/Users/user/Downloads/p2p-nft-swap/build/swap_AtomicSwap.fc` 
+PROGRAM{
+  DECLPROC $AtomicSwap$_contract_init
+  DECLPROC $AtomicSwap$_contract_load
+  DECLPROC $AtomicSwap$_fun_ping
+  95211 DECLMETHOD %ping
+  DECLPROC recv_internal
+  DECLGLOBVAR __tact_context
+  DECLGLOBVAR __tact_context_sender
+  DECLGLOBVAR __tact_child_contract_codes
+  DECLGLOBVAR __tact_randomized
+  $AtomicSwap$_contract_init PROCINLINE:<{
+    PUSHNULL
+  }>
+  $AtomicSwap$_contract_load PROCINLINE:<{
+    c4 PUSH
+    CTOS
+    1 LDI
+    DROP
+    IF:<{
+      PUSHNULL
+    }>ELSE<{
+      $AtomicSwap$_contract_init INLINECALLDICT
+    }>
+  }>
+  $AtomicSwap$_fun_ping PROCREF:<{
+    42 PUSHINT
+  }>
+  %ping PROC:<{
+    $AtomicSwap$_contract_load INLINECALLDICT
+    $AtomicSwap$_fun_ping INLINECALLDICT
+    NIP
+  }>
+  recv_internal PROC:<{
+    DROP
+    CTOS
+    2 PUSHINT
+    SDSKIPFIRST
+    1 LDI
+    1 LDI
+    LDMSGADDR
+    OVER
+    s3 s4 XCHG
+    s5 s5 XCHG2
+    4 TUPLE
+    __tact_context SETGLOB
+    SWAP
+    __tact_context_sender SETGLOB
+    $AtomicSwap$_contract_load INLINECALLDICT
+    DROP
+    IFJMP:<{
+    }>
+    130 THROW
+  }>
+}END>c

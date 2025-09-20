@@ -1,25 +1,22 @@
-FROM node:20-bookworm-slim
+# backend/Dockerfile (Debian slim)
+FROM node:20-bullseye-slim
 WORKDIR /app
 
-# системные зависимости (openssl для prisma, curl для отладки)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates curl \
-  && rm -rf /var/lib/apt/lists/*
+# полезное
+RUN apt-get update -y && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# зависимости npm (включая devDeps)
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+# deps
+COPY package*.json ./
 RUN npm install
 
-# prisma client и tsconfig
-COPY tsconfig.json ./
+# конфиги и исходники
+COPY tsconfig.json ./tsconfig.json
 COPY prisma ./prisma
-RUN npx prisma generate
-
-# исходники и сборка
 COPY src ./src
-RUN npm run build
 
-ENV PORT=8080
+# prisma client + TS build
+RUN npx prisma generate && npm run build
+
+ENV NODE_ENV=production
 EXPOSE 8080
-
-CMD ["node","dist/server.js"]
+CMD ["node", "dist/server.js"]

@@ -1,0 +1,94 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; swap_AtomicSwap.headers.fc
+;;
+;; Header files for AtomicSwap
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; $AtomicSwap$_contract_init
+tuple $AtomicSwap$_contract_init() impure inline;
+
+;; $AtomicSwap$_contract_load
+tuple $AtomicSwap$_contract_load() impure inline;
+
+;; $AtomicSwap$_fun_ping
+(tuple, int) $AtomicSwap$_fun_ping(tuple $self) impure inline_ref;
+
+
+;; swap_AtomicSwap.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+;; swap_AtomicSwap.storage.fc
+;;
+;; Type: AtomicSwap
+;; TLB: _  = AtomicSwap
+;;
+
+tuple $AtomicSwap$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return null();
+    }
+    else {
+        return $AtomicSwap$_contract_init();
+    }
+}
+
+;;
+;; Contract AtomicSwap functions
+;;
+
+tuple $AtomicSwap$_contract_init() impure inline {
+    tuple $self = null();
+    return $self;
+}
+
+(tuple, int) $AtomicSwap$_fun_ping(tuple $self) impure inline_ref {
+    var ($self) = $self;
+    var $fresh$ret_0 = 42;
+    return ($self, $fresh$ret_0);
+}
+
+;;
+;; Get methods of a Contract AtomicSwap
+;;
+
+_ %ping() method_id(95211) {
+    var self = $AtomicSwap$_contract_load();
+    var res = self~$AtomicSwap$_fun_ping();
+    return res;
+}
+
+;;
+;; Routing of a Contract AtomicSwap
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var $self = $AtomicSwap$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    throw(130);
+}

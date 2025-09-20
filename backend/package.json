@@ -26,5 +26,9 @@
     "typescript": "^5.5.4",
     "tsx": "^4.17.0",
     "@types/node": "^20.12.12"
+  },
+  "prisma": {
+    "seed": "node ./prisma/seed.js"
   }
+
 }

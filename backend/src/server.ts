@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import cors from '@fastify/cors';
 import { PrismaClient } from '@prisma/client';
+import { loadDeploy, buildTonConnectDeploy } from './ton/deploy.js';
 
 function toJSONSafe(v: any): any {
   if (typeof v === 'bigint') return v.toString();
@@ -99,5 +100,12 @@ app.get('/api/tonconnect/setfee-demo', async () => {
   const contract = process.env.CONTRACT_ADDRESS || '';
   // Эмулируем set_fee_receiver: маленький перевод с комментом — чтобы проверить путь в Tonkeeper
   return buildTonTransfer(contract, 0.01, 'set_fee_receiver (mock)');
+});
+
+
+
+app.get('/api/tonconnect/deploy', async () => {
+  const { address, state_init } = loadDeploy();
+  return buildTonConnectDeploy(address, state_init, 0.05);
 });
 
