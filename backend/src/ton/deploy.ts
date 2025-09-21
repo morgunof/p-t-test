@@ -1,72 +1,50 @@
-import { readFileSync, readdirSync } from 'fs';
-import { join } from 'path';
-import { Address, Cell, beginCell, contractAddress, storeStateInit } from '@ton/core';
+// backend/src/ton/deploy.ts
+import { Address, beginCell, contractAddress, storeStateInit, type StateInit } from '@ton/core';
+// ВАЖНО: импорт именно из .js, как у тебя в проекте
+import { AtomicSwap } from '../tact/swap_AtomicSwap.js';
 
-type CompiledJson = { code: string; data: string };
+export async function loadDeploy() {
+  const owner = process.env.OWNER_ADDRESS;
+  const fee   = process.env.FEE_RECEIVER;
+  if (!owner || !fee) throw new Error('OWNER_ADDRESS or FEE_RECEIVER is missing');
 
-function findBuildFile(): { type: 'compiled' | 'state_cell'; path: string } {
-  const bdir = join(process.cwd(), 'build');
-  const files = readdirSync(bdir);
-  const compiled = files.find(f => f.endsWith('.compiled.json') || f.endsWith('.json'));
-  if (compiled) return { type: 'compiled', path: join(bdir, compiled) };
-  const cell = files.find(f => f.endsWith('.cell') || f.endsWith('.pkg'));
-  if (cell) return { type: 'state_cell', path: join(bdir, cell) };
-  throw new Error('В build/ не найдено ни *.compiled.json, ни *.cell/*.pkg');
-}
+  const ownerAddr = Address.parse(owner);
+  const feeAddr   = Address.parse(fee);
 
-export function loadDeploy() {
-  const { type, path } = findBuildFile();
-
-  if (type === 'compiled') {
-    const j: CompiledJson = JSON.parse(readFileSync(path, 'utf-8'));
-    // ожидаем base64-клетки
-    const code = Cell.fromBoc(Buffer.from(j.code, 'base64'))[0];
-    const data = Cell.fromBoc(Buffer.from(j.data, 'base64'))[0];
-
-    const stateInitCell = beginCell().store(storeStateInit({ code, data })).endCell();
-    const stateInitBoc = stateInitCell.toBoc({ idx: false }).toString('base64');
-    const addr = contractAddress(0, { code, data });
-    return { address: addr.toString({ bounceable: true }), state_init: stateInitBoc };
+  // В биндингах нет AtomicSwap.init, а есть только fromInit().
+  // Пробуем универсально: без аргументов, если не выйдет — с аргументами.
+  let created: any;
+  try {
+    created = await (AtomicSwap as any).fromInit();
+  } catch {
+    created = await (AtomicSwap as any).fromInit(ownerAddr, feeAddr);
   }
 
-  // type === 'state_cell' → предполагаем, что это уже StateInit-BOC
-  const boc = readFileSync(path);
-  const stateInitCell = Cell.fromBoc(boc)[0];
+  // created — это инстанс, у которого обычно есть .address и .init { code, data }
+  const address: Address = created?.address;
+  const init: StateInit | undefined = created?.init;
 
-  // Адрес считаем через распаковку как StateInit (code+data)
-  // Пробуем гидрировать как StateInit: code = ref(0), data = ref(1) или опциональные поля
-  // Универсальный способ: попытаемся прочитать как StateInit вручную.
-  const slice = stateInitCell.beginParse();
-  const hasSplitDepth = slice.loadBit(); // _ split_depth^?
-  if (hasSplitDepth) slice.loadUint(5);
-  const hasSpecial = slice.loadBit(); // _ special^?
-  if (hasSpecial) {
-    // unusual; не ожидаем
+  if (!init?.code || !init?.data) {
+    throw new Error('Invalid Tact init result (no code/data)');
   }
-  const hasCode = slice.loadBit();
-  let code: Cell | null = null;
-  if (hasCode) code = slice.loadRef();
-  const hasData = slice.loadBit();
-  let data: Cell | null = null;
-  if (hasData) data = slice.loadRef();
 
-  if (!code) throw new Error('StateInit: code not found in cell');
-  if (!data) data = new Cell();
+  const state_init = beginCell()
+    .store(storeStateInit(init))
+    .endCell()
+    .toBoc({ idx: false })
+    .toString('base64');
 
-  const addr = contractAddress(0, { code, data });
-  const stateInitBoc = stateInitCell.toBoc({ idx: false }).toString('base64');
-  return { address: addr.toString({ bounceable: true }), state_init: stateInitBoc };
+  return { address: address.toString(), state_init };
 }
 
-export function buildTonConnectDeploy(address: string, stateInitBoc: string, amountTon = 0.05) {
-  const amountNano = BigInt(Math.floor(amountTon * 1e9)).toString();
+export function buildTonConnectDeploy(address: string, state_init: string, amountTon: number) {
   return {
-    valid_until: Math.floor(Date.now() / 1000) + 5 * 60,
+    valid_until: Math.floor(Date.now() / 1000) + 600,
     messages: [
       {
         address,
-        amount: amountNano,
-        state_init: stateInitBoc,
+        amount: String(Math.round(amountTon * 1e9)),
+        state_init,
       },
     ],
   };

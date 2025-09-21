@@ -2,8 +2,14 @@
   "projects": [
     {
       "name": "swap",
-      "path": "./contracts/AtomicSwap.tact",
-      "output": "./build"
+      "path": "contracts/AtomicSwap.tact",
+      "output": "build",
+      "options": {
+        "init": {
+          "owner": "UQASO3yGFsnnEZIyPioH9gr3I9BqjT4L4Nx_Ye_f8ThkcL6d",
+          "feeReceiver": "UQASO3yGFsnnEZIyPioH9gr3I9BqjT4L4Nx_Ye_f8ThkcL6d"
+        }
+      }
     }
   ]
 }

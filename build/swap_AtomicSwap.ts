@@ -659,7 +659,7 @@ function initAtomicSwap_init_args(src: AtomicSwap_init_args) {
 }
 
 async function AtomicSwap_init() {
-    const __code = Cell.fromHex('b5ee9c72410105010054000114ff00f4a413f4bcf2c80b0102016202030050d030d072d721d200d200fa4021103450556f04f86101f862ed44d0d20030916d916de230dcf2c0820121a0e7d7da89a1a4006122db22dbc5b67863040004802acb65fc4d');
+    const __code = Cell.fromHex('b5ee9c7241010301005900017aff008e88f4a413f4bcf2c80bed53208e283030d072d721d200d200fa4021103450556f04f86101f862ed44d0d20030916d916de230dcf2c082e1ed43d9010123a65cfafb513434800c245b645b78b6cf0c60020004802a10196e22');
     const builder = beginCell();
     builder.storeUint(0, 1);
     initAtomicSwap_init_args({ $$type: 'AtomicSwap_init_args' })(builder);
